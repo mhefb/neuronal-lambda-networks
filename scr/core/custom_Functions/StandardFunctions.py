@@ -12,14 +12,42 @@ class StandardFunctions(FunctionsBase):
         :param prev_activations: activations of the layer before
         :return: z - the weighted inputs
         """
-        if layer_paras[0].shape[1] != prev_activations.shape[0]:  # check if the inputs are in the correct shapes
+        """if layer_paras[0].shape[1] != prev_activations.shape[0]:  # check if the inputs are in the correct shapes
             print('not able to do the weighting, prev_activations and layer_paras do not have matching shapes')
             raise Exception('prev_activations ', layer_paras[0].shape, ' and layer_paras', prev_activations.shape,
-                            ' do not have matching shapes')
+                            ' do not have matching shapes')"""
 
         result = np.dot(layer_paras[0], prev_activations)  # multiplication by the weights
         result = result + layer_paras[1]  # addition of the biases
         return result
+
+    def prime_weighting_0(self, error_of_layer, activation_of_previous_layer):
+        """
+        NOT-SAFE
+        gradient for first parameter
+        ∂C/∂w_ljk = a_l−1k δ_lj
+
+        :param error_of_layer: δ_lj
+        :param activation_of_previous_layer: a_l−1k
+        :return: ∂C/∂w_ljk
+        """
+        print('error_of_layer shape', error_of_layer.shape)
+        print('activation_of_previous_layer shape', activation_of_previous_layer.shape)
+
+        gradient = np.dot(error_of_layer, activation_of_previous_layer.transpose())
+        return gradient
+
+    def prime_weighting_1(self, error_of_layer, activation_of_previous_layer):
+        """
+        NOT-SAFE
+        gradient for the second parameter
+        ∂C/∂b=δ
+
+        :param error_of_layer: δ
+        :param activation_of_previous_layer: not used here
+        :return: ∂C/∂b
+        """
+        return error_of_layer
 
     def generate_weights(self, structure: list[int]):
         """
@@ -37,7 +65,7 @@ class StandardFunctions(FunctionsBase):
         return paras
 
     def activation_function(self, z: np.ndarray):
-        """Sigmoid function"""
+        """Sigmoid function 1 / (1 + e^-z)"""
         return 1.0 / (1.0 + np.exp(-z))
 
     def prime_activation_function(self, z: np.ndarray):
@@ -49,11 +77,28 @@ class StandardFunctions(FunctionsBase):
         f(x) = 1/2*n*∑(|y - a|²)"""
         return_val = 0
         for (i, j) in zip(expected_output, last_activation):  # Sums the squared difference
-            return_val = (j - i) ** (j - i)
+            return_val = (j - i) ** 2
         return_val /= 2 * len(expected_output)  # makes it to half the average cost
         return return_val
 
-    def prime_cost_function(self, expected_output, last_activation):
+    def prime_cost_function(self, expected_output, network_output):
         """'Derivative' of the cost function
         f'(x) = a - y;  needs to be divided by the number of training samples"""
-        return last_activation - expected_output
+        return network_output - expected_output
+
+    def prev_layer_function(self, parameters_of_next_layer, weighted_inputs_of_current_layer, error_of_next_layer):
+        """
+        NOT-SAFE
+        δ_l = ((w_l+1)^T δ_l+1) ⊙ σ′(z_l)
+
+        :param parameters_of_next_layer: w_l+1
+        :param weighted_inputs_of_current_layer: z_l
+        :param error_of_next_layer: δ_l+1
+        :return: δ_l
+        """
+
+        # (w_l+1)^T δ_l+1
+        return_val = np.dot(parameters_of_next_layer[0].transpose(), error_of_next_layer)
+        # ⊙ σ′(z_l)
+        return_val = np.multiply(return_val, self.prime_activation_function(weighted_inputs_of_current_layer))
+        return return_val

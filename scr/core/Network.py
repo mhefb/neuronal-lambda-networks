@@ -12,11 +12,13 @@ class network:
     funcs: FunctionBase
 
     def __init__(self, inputs: int, hidden_layers: [int], outputs: int, functions=StandardFunctions()):
+        # Set functions
+        self.funcs = functions
+
+        # Generate structure
         self.structure = hidden_layers
         self.structure.insert(0, inputs)
         self.structure.append(outputs)
-
-        self.funcs = functions
         self.paras = self.funcs.generate_weights(self.structure)
 
     def feedforward(self, activation: np.array):
@@ -28,6 +30,7 @@ class network:
         # activations = list
         weighted_inputs = []
         for (inp, exp_out) in training_data:
+            # 2D-list of the activation of neurons for each layer
             activations = [inp]
 
             # forward pass
@@ -36,22 +39,39 @@ class network:
                 weighted_inputs.append(weighted_inp)
                 activations.append(self.funcs.activation_function(weighted_inp))
 
-            print('temp end')
+            print('unsafe code follows')
 
-            # list of error produces by each layer of the network
+            #print('activations\n', activations)
+            #print('activations[-1]\n', activations[-1])
+            # 2D-list of error produces by each layer of the network
             # initialised with the values for the fist layer
-            errors = [np.dot(self.funcs.prime_cost_function(exp_out, activations[-1]),
-                             self.funcs.prime_activation_function(weighted_inputs[-1]))]
 
-            # list for gradient of each parameter of the network
+            #print('prime_cost_function:\n', self.funcs.prime_cost_function(exp_out, activations[-1]))
+            #print('prime_activation_function:\n', self.funcs.prime_activation_function(weighted_inputs[-1]))
+            errors = [self.funcs.prime_cost_function(exp_out, activations[-1])
+                      * self.funcs.prime_activation_function(weighted_inputs[-1])]
+            # ↑ semi safe
+            print('errors', errors)
+
+            # 2D-list for gradient of each parameter of the network
             # initialised with the values for the fist layer
-            params_gradient = [[p_inf(errors[-1], activations[-1])
-                                for p_inf in self.funcs.paras_influence_on_weighted_input]]
+
+            params_gradient = [[]]
+            for p_inf in self.funcs.paras_influence_on_weighted_input:
+                print('errors[0]: \n', errors[0])
+                print('activations[-1]: \n', activations[-1])
+                params_gradient[0].append([p_inf(errors[0], activations[-1])])
+                """
+            params_gradient = [[p_inf(errors[0], activations[-1])
+                                for p_inf in self.funcs.paras_influence_on_weighted_input]]"""
 
             # backward pass
-            for i in range(len(self.paras), 0, -1):
-
-                errors.append(self.funcs.prev_layer_function(self.paras[i], weighted_inputs[i], errors[-1]))
+            for i in range(len(self.paras) - 1, 1, -1):
+                print('errors:\n', errors)
+                print('weighted_inputs:\n', weighted_inputs)
+                print('self.paras:\n', self.paras)
+                errors.append(self.funcs.prev_layer_function(self.paras[i], weighted_inputs[i-1], errors[-1]))
 
                 params_gradient.append(
-                    [p_inf(errors[-1], activations[i]) for p_inf in self.paras_influence_on_weighted_input])
+                    [p_inf(errors[-1], activations[i]) for p_inf in self.funcs.paras_influence_on_weighted_input])
+

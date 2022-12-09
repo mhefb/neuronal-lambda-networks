@@ -5,6 +5,17 @@ class FunctionsBase:
 
     paras_influence_on_weighted_input: list
 
+    def __init__(self):
+        self.paras_influence_on_weighted_input = []
+        try:
+            i = 0
+            while True:
+                self.paras_influence_on_weighted_input.append(
+                    self.__getattribute__('prime_weighting_' + str(i)))
+                i += 1
+        except:
+            return
+
     def weighting(self, layer_paras: list[np.ndarray], prev_activations):
         pass
 
@@ -23,5 +34,5 @@ class FunctionsBase:
     def prime_cost_function(self, expected_output, last_activation):
         pass
 
-    def prev_layer_function(self, param, param1, param2):
+    def prev_layer_function(self, parameters, weighted_inputs, error_of_next_layer):
         pass
