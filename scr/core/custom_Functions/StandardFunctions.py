@@ -3,6 +3,7 @@ from scr.core.custom_Functions.FunctionBase import FunctionsBase
 
 
 class StandardFunctions(FunctionsBase):
+    no_params_needed = 2
 
     def weighting(self, layer_paras: list[np.ndarray], prev_activations):
         """
@@ -31,8 +32,8 @@ class StandardFunctions(FunctionsBase):
         :param activation_of_previous_layer: a_l−1k
         :return: ∂C/∂w_ljk
         """
-        print('error_of_layer shape', error_of_layer.shape)
-        print('activation_of_previous_layer shape', activation_of_previous_layer.shape)
+        # print('error_of_layer shape', error_of_layer.shape)
+        # print('activation_of_previous_layer shape', activation_of_previous_layer.shape)
 
         gradient = np.dot(error_of_layer, activation_of_previous_layer.transpose())
         return gradient
@@ -52,9 +53,10 @@ class StandardFunctions(FunctionsBase):
     def generate_weights(self, structure: list[int]):
         """
         Generates the all weights for the neural network
+        Here it is a list per layer for each parameter
 
         :param structure: list of the desired number of neurons for each layer
-        :return: All weights for the neural network
+        :return: All parameters for the neural network
         """
         paras = []
         for k in range(len(structure)):
@@ -63,6 +65,9 @@ class StandardFunctions(FunctionsBase):
                            np.random.randn(structure[k], 1)]
                 paras.append(t_paras)
         return paras
+
+    def adjust_weights(self, prams: list, params_gradient):
+        pass
 
     def activation_function(self, z: np.ndarray):
         """Sigmoid function 1 / (1 + e^-z)"""
