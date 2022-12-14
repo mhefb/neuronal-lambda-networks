@@ -19,77 +19,67 @@ class network:
         self.structure = hidden_layers
         self.structure.insert(0, inputs)
         self.structure.append(outputs)
+
         self.paras = self.funcs.generate_weights(self.structure)
 
     def feedforward(self, activation: np.array):
+        # For each layer:
         for layer in self.paras:
+            # activations_layer = activation_function(
+            #   weighting_function(parameters_layer, activations_layer-1) )
             activation = self.funcs.activation_function(self.funcs.weighting(layer, activation))
         return activation
 
     def train(self, training_data: list[(np.array, int)], learning_rate=0.01):  # , validation_data):
-        # activations = list
+        # list of values before the activation_function
         weighted_inputs = []
+
+        # TODO: Training in batches
         for (inp, exp_out) in training_data:
             # 2D-list of the activation of neurons for each layer
             activations = [inp]
 
             # forward pass
             for layer in self.paras:
+                # weighted_input = weighting_function(parameters_layer, activations_layer-1)
                 weighted_inp = self.funcs.weighting(layer, activations[-1])
                 weighted_inputs.append(weighted_inp)
+
+                # activations_layer = activation_function(weighted_input)
                 activations.append(self.funcs.activation_function(weighted_inp))
 
-            # print('unsafe code follows')
-
-            # print('activations\n', activations)
-            # print('activations[-1]\n', activations[-1])
-            # 2D-list of error produces by each layer of the network
+            # 2D-list of error produces by each neuron of the network
             # initialised with the values for the fist layer
-
-            # print('prime_cost_function:\n', self.funcs.prime_cost_function(exp_out, activations[-1]))
-            # print('prime_activation_function:\n', self.funcs.prime_activation_function(weighted_inputs[-1]))
             errors = [self.funcs.prime_cost_function(exp_out, activations[-1])
                       * self.funcs.prime_activation_function(weighted_inputs[-1])]
-            # ↑ semi safe
-            # print('errors', errors)
 
             # 2D-list for gradient of each parameter of the network
             # initialised with the values for the fist layer
-
             params_gradient = [[[p_inf(errors[0], activations[-1])
                                 for p_inf in self.funcs.paras_influence_on_weighted_input]]]
-            # print('params_gradient', params_gradient)
 
-            """params_gradient = [[]]
-            for p_inf in self.funcs.paras_influence_on_weighted_input:
-                # print('errors[0]: \n', errors[0])
-                # print('activations[-1]: \n', activations[-1])
-                params_gradient[0].append([p_inf(errors[0], activations[-1])])
-                """
-
-            # backward pass
+            # backward pass (from last to first layer)
             for i in range(len(self.paras) - 1, 1, -1):
-                # print('errors:\n', errors)
-                # print('weighted_inputs:\n', weighted_inputs)
-                # print('self.paras:\n', self.paras)
+                # calculating the error produced from the neurons of layer i
                 errors.append(self.funcs.prev_layer_function(self.paras[i], weighted_inputs[i - 1], errors[-1]))
 
+                # temporary list of parameter gradients of layer i
                 t_params_gradient = []
-                # print('i', i)
+
+                # new_i counts upwards (from 0 to last layer)
                 new_i = (i - len(self.paras) + 1) * -1
-                # print('new_i', new_i)
+
+                # calculating the gradient for each parameter
                 for p_inf in self.funcs.paras_influence_on_weighted_input:
-                    # print('errors[new_i]: \n', errors[new_i])
-                    # print('activations[i]: \n', activations[i])
                     t_params_gradient.append(p_inf(errors[new_i], activations[i]))
                 params_gradient.append(t_params_gradient)
-                # params_gradient[].append(
-                #    [p_inf(errors[-1], activations[i]) for p_inf in self.funcs.paras_influence_on_weighted_input])
 
+                # params_gradient.append([p_inf(errors[new_i], activations[i])
+                #                        for p_inf in self.funcs.paras_influence_on_weighted_input])
+
+                # instantly applies a change to the parameters to minimise the cost
                 for j in range(self.funcs.no_params_needed):
-                    # print('\n paras', self.paras[i][j])
-                    # print('params_gradient', params_gradient[-1][j])
-
+                    # Δ_cost = - learning_rate * (Δ_cost/Δ_parameters)²
+                    # ⇒ Δ_parameters = - learning_rate * Δ_cost/Δ_parameters
                     d_paras = -learning_rate * params_gradient[-1][j]
-                    # print('d_paras', d_paras)
                     self.paras[i][j] += d_paras

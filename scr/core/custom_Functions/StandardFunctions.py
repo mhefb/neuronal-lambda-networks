@@ -24,7 +24,6 @@ class StandardFunctions(FunctionsBase):
 
     def prime_weighting_0(self, error_of_layer, activation_of_previous_layer):
         """
-        NOT-SAFE
         gradient for first parameter
         ∂C/∂w_ljk = a_l−1k δ_lj
 
@@ -40,7 +39,6 @@ class StandardFunctions(FunctionsBase):
 
     def prime_weighting_1(self, error_of_layer, activation_of_previous_layer):
         """
-        NOT-SAFE
         gradient for the second parameter
         ∂C/∂b=δ
 
@@ -93,7 +91,6 @@ class StandardFunctions(FunctionsBase):
 
     def prev_layer_function(self, parameters_of_next_layer, weighted_inputs_of_current_layer, error_of_next_layer):
         """
-        NOT-SAFE
         δ_l = ((w_l+1)^T δ_l+1) ⊙ σ′(z_l)
 
         :param parameters_of_next_layer: w_l+1
