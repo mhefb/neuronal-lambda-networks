@@ -64,9 +64,6 @@ class StandardFunctions(FunctionsBase):
                 paras.append(t_paras)
         return paras
 
-    def adjust_weights(self, prams: list, params_gradient):
-        pass
-
     def activation_function(self, z: np.ndarray):
         """Sigmoid function 1 / (1 + e^-z)"""
         return 1.0 / (1.0 + np.exp(-z))

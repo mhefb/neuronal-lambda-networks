@@ -2,7 +2,7 @@ import numpy as np
 
 
 class FunctionsBase:
-
+    no_params_needed: int
     paras_influence_on_weighted_input: list
 
     def __init__(self):
