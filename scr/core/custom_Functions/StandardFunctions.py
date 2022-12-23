@@ -13,12 +13,9 @@ class StandardFunctions(FunctionsBase):
         :param prev_activations: activations of the layer before
         :return: z - the weighted inputs
         """
-        """if layer_paras[0].shape[1] != prev_activations.shape[0]:  # check if the inputs are in the correct shapes
-            print('not able to do the weighting, prev_activations and layer_paras do not have matching shapes')
-            raise Exception('prev_activations ', layer_paras[0].shape, ' and layer_paras', prev_activations.shape,
-                            ' do not have matching shapes')"""
 
         result = np.dot(layer_paras[0], prev_activations)  # multiplication by the weights
+        result.shape = (result.shape[0], 1)
         result = result + layer_paras[1]  # addition of the biases
         return result
 
@@ -31,8 +28,8 @@ class StandardFunctions(FunctionsBase):
         :param activation_of_previous_layer: a_l−1k
         :return: ∂C/∂w_ljk
         """
-        # print('error_of_layer shape', error_of_layer.shape)
-        # print('activation_of_previous_layer shape', activation_of_previous_layer.shape)
+
+        activation_of_previous_layer.shape = (len(activation_of_previous_layer), 1)
 
         gradient = np.dot(error_of_layer, activation_of_previous_layer.transpose())
         return gradient
