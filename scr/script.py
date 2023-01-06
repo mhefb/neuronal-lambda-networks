@@ -1,13 +1,28 @@
 import numpy as np
 from keras.datasets import mnist
+from core.Network import Network
+#import core.Network_File_Handler as fh
 
-from core.Network import network
+
+def transform_data(data_x, daty_y):
+    data = np.ndarray(shape=(len(data_x), 784))
+    for i in range(len(data_x)):
+        t_data = []
+        for y_cord in data_x[i]:
+            t_data.extend(y_cord / 255)
+        data[i] = t_data
+
+    correct_results = []
+    for i in range(len(daty_y)):
+        t_data = np.zeros(shape=(10, 1))
+        t_data[daty_y[i]] = 1
+        correct_results.append(t_data)
+
+    return zip(data, correct_results)
+
 
 # loading the dataset
 (train_X, train_y), (test_X, test_y) = mnist.load_data()
-
-train_X = train_X[:500]
-train_y = train_y[:500]
 
 # printing the shapes of the vectors
 print('X_train: ' + str(train_X.shape))
@@ -15,33 +30,35 @@ print('Y_train: ' + str(train_y.shape))
 print('X_test:  ' + str(test_X.shape))
 print('Y_test:  ' + str(test_y.shape))
 
-data = np.ndarray(shape=(len(train_X), 784))
-for i in range(len(train_X)):
-    t_data = []
-    for y_cord in train_X[i]:
-        t_data.extend(y_cord/255)
-    data[i] = t_data
+test = Network(784, [30], 10)
 
-correct_results = []
-for i in range(len(train_y)):
-    t_data = np.zeros(shape=(10, 1))
-    t_data[train_y[i]] = 1
-    correct_results.append(t_data)
+inputs = list(transform_data(train_X, train_y))
+val_data = list(transform_data(test_X, test_y))
 
-test = network(784, [15], 10)
-# inputs = (np.zeros(shape=(2, 1)), 0), ([1, 1], 2)
-inputs = data[400]
-# print('feedforward test:\n', test.feedforward(inputs), '\n\n')
-print('cost before training', test.funcs.cost_function(correct_results[0], test.feedforward(inputs)))
+test.train_epoch_wise(inputs, val_data, no_epochs=30, learning_rate=3, batch_size=10)
+print('avg error', test.avg_error)
 
-inputs = [i for i in zip(data[:300], correct_results[:300])]
-test.train(inputs, learning_rate=3)
+test.avg_error = []
+test.train_epoch_wise(inputs, val_data, no_epochs=10, learning_rate=1, batch_size=20)
+print('avg error', test.avg_error)
 
-inputs = data[400]
-print('cost after training', test.funcs.cost_function(correct_results[0], test.feedforward(inputs)))
+test.avg_error = []
+test.train_epoch_wise(inputs, val_data, no_epochs=10, learning_rate=0.1, batch_size=40)
+print('avg error', test.avg_error)
+
+for t in range(80, 101, 1):
+    test.evaluate(val_data, tolerance=(t / 100))
 
 
 """
+test = Network(1, [2], 1)
+print(test.feedforward([0]))
+fh.save(test, path="")
+
+test = None
+
+test2 = fh.read(path="")
+print(test2.feedforward([0]))
 
 from core.custom_Functions.StandardFunctions import StandardFunctions
 

@@ -3,7 +3,7 @@ from scr.core.custom_Functions.FunctionBase import FunctionsBase
 
 
 class StandardFunctions(FunctionsBase):
-    no_params_needed = 2
+    no_params = 2
 
     def weighting(self, layer_paras: list[np.ndarray], prev_activations):
         """
@@ -49,6 +49,8 @@ class StandardFunctions(FunctionsBase):
         """
         Generates the all weights for the neural network
         Here it is a list per layer for each parameter
+
+        list(list(np.ndarray))
 
         :param structure: list of the desired number of neurons for each layer
         :return: All parameters for the neural network

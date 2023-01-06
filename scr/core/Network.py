@@ -3,13 +3,14 @@ from scr.core.custom_Functions import FunctionBase
 from scr.core.custom_Functions.StandardFunctions import StandardFunctions
 
 
-class network:
+class Network:
     structure: list[int]
     paras: list
     prime_activation_function: callable
     prev_layer_function: callable
     paras_influence_on_weighted_input: list[callable]
     funcs: FunctionBase
+    avg_error: list
 
     def __init__(self, inputs: int, hidden_layers: [int], outputs: int, functions=StandardFunctions()):
         # Set functions
@@ -19,6 +20,7 @@ class network:
         self.structure = hidden_layers
         self.structure.insert(0, inputs)
         self.structure.append(outputs)
+        self.avg_error = []
 
         self.paras = self.funcs.generate_weights(self.structure)
 
@@ -30,16 +32,24 @@ class network:
             activation = self.funcs.activation_function(self.funcs.weighting(layer, activation))
         return activation
 
-    def train(self, training_data: list[(np.array, np.array)], learning_rate=0.01, batch_size=1):  # , validation_data):
+    def train_epoch_wise(self, training_data: list[(np.array, np.array)], validation_data: list[(np.array, np.array)],
+                         no_epochs=1, learning_rate=0.01, batch_size=1, tolerance=0.95):
+        for epoch in range(no_epochs):
+            print('\nEpoch:', epoch+1)
+            self.train_batch_wise(training_data, learning_rate=learning_rate, batch_size=batch_size)
+            self.evaluate(validation_data, tolerance=tolerance)
+
+    def train_batch_wise(self, training_data: list[(np.array, np.array)], learning_rate=0.01, batch_size=1):
         # splitting training data into batches
         training_batches = [training_data[i:i + batch_size] for i in range(0, len(training_data), batch_size)]
 
+        training_batches[-1] = training_data[-batch_size-1:-1]
+
         for sample_batch in training_batches:
             # list of ∂C/∂w for each weight, for each sample batch
-            params_gradient = [[]]
+            params_gradient = [[] for _ in range(batch_size)]
 
             for entry in range(len(sample_batch)):
-
                 # takes care of the forward-pass
                 activations, weighted_inputs = self.forward_pass(sample_batch[entry])
 
@@ -59,20 +69,26 @@ class network:
                     t_params_gradient.append(p_inf(error, activations[-2]))
                 params_gradient[entry].insert(0, t_params_gradient)
 
-            for layer in range(len(self.structure[1:])):
-                for param_type in range(self.funcs.no_params_needed):
-                    t_params_gradient = np.zeros(shape=self.paras[-(layer + 1)][param_type].shape)
-                    for entry in range(batch_size):
-                        if self.paras[-(layer + 1)][param_type].shape != params_gradient[entry][layer][param_type].shape:
-                            raise Exception("self.paras[-(layer+1)][param_type].shape {0} != params_gradient[entry]"
-                                            "[layer][param_type].shape {1}".
-                                            format(self.paras[-(layer + 1)][param_type].shape, params_gradient[entry]
-                                                   [layer][param_type].shape))
-                        t_params_gradient += params_gradient[entry][layer][param_type] / batch_size
-                    t_params_gradient *= -1 * learning_rate
-                    self.paras[-(layer + 1)][param_type] += t_params_gradient
-
+            # apply changes to parameters
+            self.adjust_parameters(params_gradient, learning_rate, batch_size)
         return
+
+    def adjust_parameters(self, params_gradient, learning_rate, batch_size):
+        for layer in range(len(self.structure[1:])):
+            for param_type in range(self.funcs.no_params):
+                t_params_gradient = np.zeros(shape=self.paras[-(layer + 1)][param_type].shape)
+                for entry in range(len(params_gradient)):
+                    #print('entry:', entry, 'layer:', layer, 'param_type:', param_type)
+                    #print(params_gradient[entry][layer][param_type].shape)
+
+                    if self.paras[-(layer + 1)][param_type].shape != params_gradient[entry][layer][param_type].shape:
+                        raise Exception("self.paras[-(layer+1)][param_type].shape {0} != params_gradient[entry]"
+                                        "[layer][param_type].shape {1}".
+                                        format(self.paras[-(layer + 1)][param_type].shape, params_gradient[entry]
+                                                         [layer][param_type].shape))
+                    t_params_gradient += params_gradient[entry][layer][param_type] / batch_size
+                t_params_gradient *= -1 * learning_rate
+                self.paras[-(layer + 1)][param_type] += t_params_gradient
 
     def backward_pass(self, activations, weighted_inputs, error_last_layer):
         weights_gradient = []
@@ -111,15 +127,21 @@ class network:
 
         return activations, weighted_inputs
 
-    """
-            for layer in range(len(self.paras)):
-                for param_type in range(self.funcs.no_params_needed):
-                    # instantly applies a change to the parameters to minimise the cost
-                    d_paras = 0
-                    for entry in range(batch_size):
-                        # Δ_cost = - learning_rate * (Δ_cost/Δ_parameters)²
-                        # ⇒ Δ_parameters = - learning_rate * Δ_cost/Δ_parameters
-                        print('params_gradient[entry][layer][j]', params_gradient[entry][layer][param_type])
-                        d_paras += -learning_rate * params_gradient[entry][layer][param_type]
-                    d_paras /= batch_size
-                    self.paras[layer][param_type] += d_paras"""
+    def evaluate(self, validation_data, tolerance=0.95):
+        got_correct = 0
+        avg_error = 0
+
+        variation = np.ones(shape=(self.structure[-1], 1))
+        variation *= (1 - tolerance)
+
+        for sample in validation_data:
+            result = self.feedforward(sample[0])
+            if (np.greater_equal(result, sample[1] - variation).all() and
+               np.less_equal(result, sample[1] + variation).all()) or \
+                    np.array_equal(result, sample[1]):
+                got_correct += 1
+            avg_error += abs(sample[1]-result)
+
+        print(got_correct, '/', len(validation_data), 'were correct within a', tolerance, 'tolerance range')
+        avg_error *= 1/len(validation_data)
+        self.avg_error.append(np.sum(avg_error))
