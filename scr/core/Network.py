@@ -5,24 +5,34 @@ from scr.core.custom_Functions.StandardFunctions import StandardFunctions
 
 class Network:
     structure: list[int]
-    paras: list
-    prime_activation_function: callable
-    prev_layer_function: callable
-    paras_influence_on_weighted_input: list[callable]
+    paras: list[list[np.ndarray]]
     funcs: FunctionBase
     avg_error: list
 
-    def __init__(self, inputs: int, hidden_layers: [int], outputs: int, functions=StandardFunctions()):
-        # Set functions
-        self.funcs = functions
+    @staticmethod
+    def createFrom(structure: list[int], paras: list[list[np.ndarray]], funcs: FunctionBase):
+        net = Network()
+        net.structure = structure
+        net.paras = paras
+        net.funcs = funcs
+
+        return net
+
+    @staticmethod
+    def createBasic(inputs: int, hidden_layers: [int], outputs: int, functions=StandardFunctions()):
+        net = Network()
+
+        net.funcs = functions
 
         # Generate structure
-        self.structure = hidden_layers
-        self.structure.insert(0, inputs)
-        self.structure.append(outputs)
-        self.avg_error = []
+        net.structure = hidden_layers
+        net.structure.insert(0, inputs)
+        net.structure.append(outputs)
+        net.avg_error = []
 
-        self.paras = self.funcs.generate_weights(self.structure)
+        net.paras = net.funcs.generate_weights(net.structure)
+
+        return net
 
     def feedforward(self, activation: np.ndarray):
         # For each layer:

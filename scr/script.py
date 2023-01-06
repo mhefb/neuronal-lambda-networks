@@ -1,7 +1,8 @@
 import numpy as np
 from keras.datasets import mnist
 from core.Network import Network
-#import core.Network_File_Handler as fh
+from core.custom_Functions.StandardFunctions import StandardFunctions
+from core.exportsystem.Exporter import load, save
 
 
 def transform_data(data_x, daty_y):
@@ -22,15 +23,26 @@ def transform_data(data_x, daty_y):
 
 
 # loading the dataset
-(train_X, train_y), (test_X, test_y) = mnist.load_data()
+#(train_X, train_y), (test_X, test_y) = mnist.load_data()
 
 # printing the shapes of the vectors
-print('X_train: ' + str(train_X.shape))
-print('Y_train: ' + str(train_y.shape))
-print('X_test:  ' + str(test_X.shape))
-print('Y_test:  ' + str(test_y.shape))
+#print('X_train: ' + str(train_X.shape))
+#print('Y_train: ' + str(train_y.shape))
+#print('X_test:  ' + str(test_X.shape))
+#print('Y_test:  ' + str(test_y.shape))
 
-test = Network(784, [30], 10)
+net1 = Network.createBasic(2, [3], 1)
+
+save("MyNetwork.lul", net1)
+
+net2 = load("MyNetwork.lul")
+#x = '{"func": "standard", "paras": [["RA9YWAwa6b8N1Rt2Z/vTPyDBXaE+VOU/Cuq+i8ii4D+RtuopfEDgP3li5vdypuG/", "KmG+hDgD77/7sVqA8jrqPwCgepc2zeG/"], ["NZPns5Uqzb83ri/i5zvQPwfJplywI+S/", "7Gm3KLPTtb8="]], "structure": [2, 3, 1]}'
+
+print("\nParas:")
+print(net1.paras)
+print(net2.paras)
+
+'''
 
 inputs = list(transform_data(train_X, train_y))
 val_data = list(transform_data(test_X, test_y))
@@ -66,3 +78,4 @@ tete = StandardFunctions()
 print(tete.paras_influence_on_weighted_input)
 print(tete.paras_influence_on_weighted_input[0])
 """
+'''
