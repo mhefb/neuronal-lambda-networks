@@ -19,11 +19,12 @@ class StandardFunctions(FunctionsBase):
         result = result + layer_paras[1]  # addition of the biases
         return result
 
-    def prime_weighting_0(self, error_of_layer, activation_of_previous_layer):
+    def prime_weighting_0(self, error_of_layer, activation_of_previous_layer, current_parameters):
         """
         gradient for first parameter
         ∂C/∂w_ljk = a_l−1k δ_lj
 
+        :param current_parameters: not used here
         :param error_of_layer: δ_lj
         :param activation_of_previous_layer: a_l−1k
         :return: ∂C/∂w_ljk
@@ -34,11 +35,12 @@ class StandardFunctions(FunctionsBase):
         gradient = np.dot(error_of_layer, activation_of_previous_layer.transpose())
         return gradient
 
-    def prime_weighting_1(self, error_of_layer, activation_of_previous_layer):
+    def prime_weighting_1(self, error_of_layer, activation_of_previous_layer, current_parameters):
         """
         gradient for the second parameter
         ∂C/∂b=δ
 
+        :param current_parameters: not used here
         :param error_of_layer: δ
         :param activation_of_previous_layer: not used here
         :return: ∂C/∂b

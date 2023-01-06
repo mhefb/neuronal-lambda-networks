@@ -76,7 +76,7 @@ class Network:
                 # calculates ∂C/∂w for the first layer
                 t_params_gradient = []
                 for p_inf in self.funcs.paras_influence_on_weighted_input:
-                    t_params_gradient.append(p_inf(error, activations[-2]))
+                    t_params_gradient.append(p_inf(error, activations[-2], self.paras[-1]))
                 params_gradient[entry].insert(0, t_params_gradient)
 
             # apply changes to parameters
@@ -111,7 +111,7 @@ class Network:
             # calculating the gradient for each parameter
             t_params_gradient = []
             for p_inf in self.funcs.paras_influence_on_weighted_input:
-                t_params_gradient.append(p_inf(error, activations[-layer-1]))
+                t_params_gradient.append(p_inf(error, activations[-layer-1], self.paras[-layer]))
             weights_gradient.append(t_params_gradient)
 
         return weights_gradient
