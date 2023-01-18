@@ -52,16 +52,22 @@ class SinusoidFunctions(FunctionsBase):
         :param current_parameters:
         :return: ∂C/∂w_l
         """
-        return_val = np.ndarray(shape=current_parameters[0].shape)
+        #return_val = np.ndarray(shape=current_parameters[0].shape)
+        return_val = []
 
         for j in range(current_parameters[0].shape[0]):
 
-            return_val[j] = np.multiply(current_parameters[0][j], activations_of_previous_layer)
-            return_val[j] = np.sin(return_val[j])
+            # ∂z_l/∂f_l_j = cos(f_l_j * a_l-1) * A_l_j * a_l-1
+            #return_val[j] = np.multiply(current_parameters[0][j], activations_of_previous_layer)
+            return_val.append(np.multiply(current_parameters[0][j], activations_of_previous_layer))
+            return_val[j] = np.cos(return_val[j])
             return_val[j] = np.multiply(current_parameters[1][j], return_val[j])
             return_val[j] = np.multiply(activations_of_previous_layer, return_val[j])
             return_val[j] = np.multiply(error_of_layer[j], return_val[j])
 
+        return_val = np.asarray(return_val)
+        if return_val.shape != current_parameters[0].shape:
+            raise Exception
         return return_val
 
     def prime_weighting_1(self, error_of_layer, activation_of_previous_layer, current_parameters):
@@ -85,6 +91,8 @@ class SinusoidFunctions(FunctionsBase):
                 return_val[j][k] = np.sin(return_val[j][k])
                 return_val[j][k] = np.multiply(error_of_layer[j], return_val[j][k])
 
+        if return_val.shape != current_parameters[1].shape:
+            raise Exception
         return return_val
 
     def prime_weighting_2(self, error_of_layer, activation_of_previous_layer, current_parameters):
@@ -99,6 +107,8 @@ class SinusoidFunctions(FunctionsBase):
         :param current_parameters: not used here
         :return: ∂C/∂b
         """
+        if error_of_layer.shape != current_parameters[2].shape:
+            raise Exception
         return error_of_layer
 
     def generate_weights(self, structure: list[int]):
@@ -114,33 +124,42 @@ class SinusoidFunctions(FunctionsBase):
     # TODO: setup prev_layer_function
     def prev_layer_function(self, parameters, weighted_inputs, error_of_next_layer):
         """
-        ∂z_l/∂z_l-1 = ∂z_l/∂a_l-1 * ∂a_l-1/∂z_l-1
+        δ_l   = ∂C/∂z_l
+        δ_l   = ∂C/∂z_l * ∂z_l/∂z_l-1
 
+        δ_l-1 = δ_l * ∂z_l/∂a_l-1 * ∂a_l-1/∂z_l-1
 
         TODO: ∂z_l_j_k?
-        ∂z_l_j/∂a_l-1 = A_l_j_k * f_l_j_k * cos(f_l_j_k * a_l-1_k)
-        ∂z_l_j_k/∂z_l-1_j_k = σ'(z_l-1_j_k) * A_l_j_k * f_l_j_k * cos(f_l_j_k * σ(z_l-1_j_k))
-        => ∂z_l_j/∂z_l-1_j = σ'(z_l-1_j) * A_l_j * f_l_j * cos(f_l_j * σ(z_l-1_j))
+        ∂z_l/∂a_l-1       = A_l_j_k * f_l_j_k * cos(f_l_j_k * a_l-1_k)
+        ∂z_l/∂z_l-1_j     = SUM ( A_l_j_k * f_l_j_k * σ'(z_l-1_k) * cos(f_l_j_k * σ(z_l-1_k)) )
+        => ∂z_l/∂z_l-1_j  = A_l_j * f_l_j * σ'(z_l-1) *cos(f_l_j * σ(z_l-1))
+
+        => ∂z_l/∂z_l-1    = A_l * f_l * cos(f_l * σ(z_l-1))
 
         :param parameters:
         :param weighted_inputs:
         :param error_of_next_layer:
         :return: ∂z_l/∂z_l-1
         """
-        # TODO: entries in np.ndarrays don't work like that
-        return_val = np.ndarray(shape=(parameters[2].shape[0], 1))
-        #return_val = []
+        '''return_val = []
 
         for i in range(parameters[2].shape[0]):
-            #print(weighted_inputs.shape)
-            #return_val[i] = np.ndarray(shape=weighted_inputs.shape)
-            return_val[i] = np.multiply(parameters[0][i], self.activation_function(weighted_inputs))
+            return_val.append(np.multiply(parameters[0][i], self.activation_function(weighted_inputs)))
             return_val[i] = np.cos(return_val[i])
             return_val[i] = np.multiply(return_val[i], parameters[0][i])
             return_val[i] = np.multiply(return_val[i], parameters[1][i])
             return_val[i] = np.multiply(return_val[i], self.prime_activation_function(weighted_inputs))
 
-        return_val = np.asarray(return_val)
+        return_val = np.asarray(return_val)'''
+
+        # δ_l = δ_l+1 ⊙ A_l+1.T ⊙ f_l+1.T ⊙ cos(f_l+1.T ⊙ σ(z_l)) * (σ'(z_l))²
+        return_val = parameters[0].T * self.activation_function(weighted_inputs)
+        return_val = np.cos(return_val)
+        return_val = return_val * parameters[0].T
+        return_val = return_val * parameters[1].T
+        return_val = return_val @ error_of_next_layer
+        return_val = return_val * (self.prime_activation_function(weighted_inputs)) ** 2
+
         return return_val
 
     def activation_function(self, z: np.ndarray):
