@@ -52,7 +52,7 @@ class SinusoidFunctions(FunctionsBase):
         :param current_parameters:
         :return: ∂C/∂w_l
         """
-        #return_val = np.ndarray(shape=current_parameters[0].shape)
+        '''#return_val = np.ndarray(shape=current_parameters[0].shape)
         return_val = []
 
         for j in range(current_parameters[0].shape[0]):
@@ -65,7 +65,13 @@ class SinusoidFunctions(FunctionsBase):
             return_val[j] = np.multiply(activations_of_previous_layer, return_val[j])
             return_val[j] = np.multiply(error_of_layer[j], return_val[j])
 
-        return_val = np.asarray(return_val)
+        return_val = np.asarray(return_val)'''
+        # ∂z_l/∂f_l_j = A_l * cos(f_l * a_l-1.T) * a_l-1.T
+        return_val = current_parameters[1] * np.cos(current_parameters[0] * activations_of_previous_layer.T) * \
+                     activations_of_previous_layer.T
+
+        return_val = error_of_layer * return_val
+
         if return_val.shape != current_parameters[0].shape:
             raise Exception
         return return_val
@@ -86,7 +92,6 @@ class SinusoidFunctions(FunctionsBase):
 
         for j in range(current_parameters[1].shape[0]):
             for k in range(current_parameters[1].shape[1]):
-
                 return_val[j][k] = np.multiply(activation_of_previous_layer[k], current_parameters[0][j][k])
                 return_val[j][k] = np.sin(return_val[j][k])
                 return_val[j][k] = np.multiply(error_of_layer[j], return_val[j][k])
