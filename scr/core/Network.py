@@ -1,6 +1,7 @@
 import csv
-
+import multiprocessing as mp
 import numpy as np
+
 from scr.core.custom_Functions import FunctionBase
 from scr.core.custom_Functions.StandardFunctions import StandardFunction
 
@@ -52,23 +53,25 @@ class Network:
             self.evaluate(validation_data, tolerance=tolerance, log_file_path=log_file_path)
 
     def train_batch_wise(self, training_data: list[(np.array, np.array)], learning_rate=0.01, batch_size=1):
+        # mp.set_start_method(method='fork') # only works for unix
+
         # splitting training data into batches
         training_batches = [training_data[i:i + batch_size] for i in range(0, len(training_data), batch_size)]
 
         training_batches[-1] = training_data[-batch_size - 1:-1]
+
         # TODO: use multiprocessing here too?
         for sample_batch in training_batches:
-            # list of ∂C/∂w for each weight, for each sample batch
-            params_gradient = []
-
-            # TODO: multiprocessing or this loop
-            for entry in sample_batch:
-                params_gradient.append(self.train_single_entry(entry, learning_rate, batch_size))
+            # Calculates train_single_entry for sample_batch in parallel
+            batch_pool = mp.pool.Pool()
+            results = batch_pool.map(self.train_single_entry, sample_batch)
+            params_gradient = results
+            batch_pool.terminate()
 
             # apply changes to parameters
             self.adjust_parameters(params_gradient, learning_rate, batch_size)
 
-    def train_single_entry(self, entry: (np.array, np.array), learning_rate=0.01, batch_size=1):
+    def train_single_entry(self, entry: (np.array, np.array)):
         # takes care of the forward-pass
         activations, weighted_inputs = self.forward_pass(entry)
 
@@ -102,7 +105,7 @@ class Network:
                         raise Exception("self.paras[-(layer+1)][param_type].shape {0} != params_gradient[entry]"
                                         "[layer][param_type].shape {1}".
                                         format(self.paras[-(layer + 1)][param_type].shape, params_gradient[entry]
-                        [layer][param_type].shape))
+                                                         [layer][param_type].shape))
                     t_params_gradient += params_gradient[entry][layer][param_type] / batch_size
                 t_params_gradient *= -1 * learning_rate
                 self.paras[-(layer + 1)][param_type] += t_params_gradient

@@ -1,13 +1,17 @@
 from scr.core.Network import Network
 from scr.core.custom_Functions import FunctionBase
 from scr.core.custom_Functions.StandardFunctions import StandardFunction
+from scr.core.custom_Functions.SinusoidFunctions import SinusoidFunction
+from scr.core.custom_Functions.Quadratic import QuadraticFunction
 import numpy as np
 import json
 import base64
 
 # Add new function-CLASSES here (Not files)
 MAP = {
-    "standard": StandardFunction
+    "standard": StandardFunction,
+    "sinusoid": SinusoidFunction,
+    "quadratic": QuadraticFunction
 }
 
 # Better version of is_instance, which only compaires the class-names
