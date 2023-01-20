@@ -1,13 +1,13 @@
 from scr.core.Network import Network
 from scr.core.custom_Functions import FunctionBase
-from scr.core.custom_Functions.StandardFunctions import StandardFunctions
+from scr.core.custom_Functions.StandardFunctions import StandardFunction
 import numpy as np
 import json
 import base64
 
 # Add new function-CLASSES here (Not files)
 MAP = {
-    "standard": StandardFunctions
+    "standard": StandardFunction
 }
 
 # Better version of is_instance, which only compaires the class-names

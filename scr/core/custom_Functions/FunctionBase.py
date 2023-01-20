@@ -1,7 +1,7 @@
 import numpy as np
 
 
-class FunctionsBase:
+class FunctionBase:
     no_params: int
     paras_influence_on_weighted_input: list
 

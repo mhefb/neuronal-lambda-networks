@@ -1,8 +1,8 @@
 import numpy as np
-from scr.core.custom_Functions.FunctionBase import FunctionsBase
+from scr.core.custom_Functions.FunctionBase import FunctionBase
 
 
-class StandardFunctions(FunctionsBase):
+class StandardFunction(FunctionBase):
     no_params = 2
 
     def weighting(self, layer_paras: list[np.ndarray], prev_activations):

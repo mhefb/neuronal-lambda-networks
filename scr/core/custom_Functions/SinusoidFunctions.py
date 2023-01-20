@@ -1,5 +1,5 @@
 import numpy as np
-from scr.core.custom_Functions.FunctionBase import FunctionsBase
+from scr.core.custom_Functions.FunctionBase import FunctionBase
 
 """
 Function for a connection:
@@ -11,7 +11,7 @@ b ≈ bias;       2. Weight
 """
 
 
-class SinusoidFunctions(FunctionsBase):
+class SinusoidFunction(FunctionBase):
     no_params = 3
 
     def weighting(self, layer_paras: list[np.ndarray], prev_activations):
