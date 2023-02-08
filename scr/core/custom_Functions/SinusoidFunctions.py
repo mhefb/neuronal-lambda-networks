@@ -1,5 +1,5 @@
 import numpy as np
-from scr.core.custom_Functions.FunctionBase import FunctionBase
+from core.custom_Functions.FunctionBase import FunctionBase
 
 """
 Function for a connection:

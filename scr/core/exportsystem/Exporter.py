@@ -1,13 +1,14 @@
-from scr.core.Network import Network
-from scr.core.custom_Functions import FunctionBase
-from scr.core.custom_Functions.StandardFunctions import StandardFunction
-from scr.core.custom_Functions.SinusoidFunctions import SinusoidFunction
-from scr.core.custom_Functions.Quadratic import QuadraticFunction
+from core.Network import Network
+from core.custom_Functions import FunctionBase
+from core.custom_Functions.StandardFunctions import StandardFunction
+from core.custom_Functions.SinusoidFunctions import SinusoidFunction
+from core.custom_Functions.Quadratic import QuadraticFunction
 import numpy as np
 import json
 import base64
 
 # Add new function-CLASSES here (Not files)
+
 MAP = {
     "standard": StandardFunction,
     "sinusoid": SinusoidFunction,
@@ -37,7 +38,7 @@ def __load_paras(paras: list[list[str]]):
 
         listFirst = []
 
-        for second in range(len(paras)):
+        for second in range(len(paras[first])):
             # Gets the array
             (sizeX, encodedStr) = paras[first][second]
 
@@ -45,6 +46,8 @@ def __load_paras(paras: list[list[str]]):
             # UTF8-STRING >> BASE64 >> Raw-Bytes >> Reshape
 
             asNumber = np.frombuffer(base64.b64decode(encodedStr.encode("utf-8")))
+
+            asNumber = np.copy(asNumber)
 
             # Resizes the array
             listFirst.append(asNumber.reshape((sizeX, int(len(asNumber) / sizeX))))
@@ -61,7 +64,7 @@ def __save_paras(paras: list[list[np.ndarray]]):
 
         listFirst = []
 
-        for second in range(len(paras)):
+        for second in range(len(paras[first])):
             # Gets the array
             arr: np.ndarray = paras[first][second]
 
@@ -84,7 +87,7 @@ def exportString(net: Network):
 
 def importString(jsonNet: str):
     obj = json.loads(jsonNet)
-    print(obj)
+    # print(obj)
 
     return Network.createFrom(
         structure=obj["structure"],

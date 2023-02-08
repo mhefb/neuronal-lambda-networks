@@ -32,48 +32,21 @@ if __name__ == '__main__':
     print('X_test:  ' + str(test_X.shape))
     #print('Y_test:  ' + str(test_y.shape))
 
-    test = Network.createBasic(784, [8], 10, functions=StandardFunction())
-    #test = Network.createBasic(784, [15], 10)
-
-
-    #save("MyNetwork.lul", net1)
-    #net2 = load("MyNetwork.lul")
+    #net = Network.createBasic(784, [15], 10, functions=SinusoidFunction())
+    net = load('/root/SinusoidTest_5_2.lul')
 
     inputs = list(transform_data(train_X, train_y))
     val_data = list(transform_data(test_X, test_y))
 
-    inputs = inputs[:200]
-    val_data = val_data[:300]
+    name = "SinusoidTest_6"
 
-    test.train_epoch_wise(inputs, val_data, no_epochs=30, learning_rate=3, batch_size=10)
-    print('avg error', test.avg_error)
+    print('flags', net.paras[0][0].flags)
 
-    test.avg_error = []
-    test.train_epoch_wise(inputs, val_data, no_epochs=10, learning_rate=1, batch_size=20)
-    print('avg error', test.avg_error)
+    net.train_epoch_wise(inputs, val_data, no_epochs=5, learning_rate=5, batch_size=20, log_file_path=name)
+    save(name + '_1' + '.lul', net)
 
-    test.avg_error = []
-    test.train_epoch_wise(inputs, val_data, no_epochs=10, learning_rate=0.1, batch_size=40)
-    print('avg error', test.avg_error)
+    net.train_epoch_wise(inputs, val_data, no_epochs=10, learning_rate=1, batch_size=20, log_file_path=name)
+    save(name + '_2' + '.lul', net)
 
-    for t in range(80, 101, 1):
-        test.evaluate(val_data, tolerance=(t / 100))
-
-    save("MyNetwork.lul", test)
-
-    """
-    test = Network(1, [2], 1)
-    print(test.feedforward([0]))
-    fh.save(test, path="")
-    
-    test = None
-    
-    test2 = fh.read(path="")
-    print(test2.feedforward([0]))
-    
-    from core.custom_Functions.StandardFunctions import StandardFunctions
-    
-    tete = StandardFunctions()
-    print(tete.paras_influence_on_weighted_input)
-    print(tete.paras_influence_on_weighted_input[0])
-    """
+    net.train_epoch_wise(inputs, val_data, no_epochs=10, learning_rate=0.1, batch_size=20, log_file_path=name)
+    save(name + '_3' + '.lul', net)

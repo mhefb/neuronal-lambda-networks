@@ -2,8 +2,8 @@ import csv
 import multiprocessing as mp
 import numpy as np
 
-from scr.core.custom_Functions import FunctionBase
-from scr.core.custom_Functions.StandardFunctions import StandardFunction
+from core.custom_Functions import FunctionBase
+from core.custom_Functions.StandardFunctions import StandardFunction
 
 
 class Network:
@@ -15,9 +15,13 @@ class Network:
     @staticmethod
     def createFrom(structure: list[int], paras: list[list[np.ndarray]], funcs: FunctionBase):
         net = Network()
-        net.structure = structure
-        net.paras = paras
+
         net.funcs = funcs
+
+        net.structure = structure
+        net.avg_error = []
+
+        net.paras = paras
 
         return net
 
@@ -53,20 +57,19 @@ class Network:
             self.evaluate(validation_data, tolerance=tolerance, log_file_path=log_file_path)
 
     def train_batch_wise(self, training_data: list[(np.array, np.array)], learning_rate=0.01, batch_size=1):
-        # mp.set_start_method(method='fork') # only works for unix
+        # mp.set_start_method(method='fork')
 
         # splitting training data into batches
         training_batches = [training_data[i:i + batch_size] for i in range(0, len(training_data), batch_size)]
 
         training_batches[-1] = training_data[-batch_size - 1:-1]
-
-        # TODO: use multiprocessing here too?
         for sample_batch in training_batches:
-            # Calculates train_single_entry for sample_batch in parallel
+            # list of ∂C/∂w for each weight, for each sample batch
+            params_gradient = []
+
             batch_pool = mp.pool.Pool()
             results = batch_pool.map(self.train_single_entry, sample_batch)
             params_gradient = results
-            batch_pool.terminate()
 
             # apply changes to parameters
             self.adjust_parameters(params_gradient, learning_rate, batch_size)
