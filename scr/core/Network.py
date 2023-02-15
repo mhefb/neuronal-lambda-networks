@@ -1,5 +1,6 @@
 import csv
 import multiprocessing as mp
+import os
 import numpy as np
 
 from core.custom_Functions import FunctionBase
@@ -11,6 +12,7 @@ class Network:
     paras: list[list[np.ndarray]]
     funcs: FunctionBase
     avg_error: list
+    given_commands: list[dict]
 
     @staticmethod
     def createFrom(structure: list[int], paras: list[list[np.ndarray]], funcs: FunctionBase):
@@ -20,6 +22,7 @@ class Network:
 
         net.structure = structure
         net.avg_error = []
+        net.given_commands = []
 
         net.paras = paras
 
@@ -36,6 +39,7 @@ class Network:
         net.structure.insert(0, inputs)
         net.structure.append(outputs)
         net.avg_error = []
+        net.given_commands = []
 
         net.paras = net.funcs.generate_weights(net.structure)
 
@@ -51,10 +55,14 @@ class Network:
 
     def train_epoch_wise(self, training_data: list[(np.array, np.array)], validation_data: list[(np.array, np.array)],
                          no_epochs=1, learning_rate=0.01, batch_size=1, tolerance=0.95, log_file_path=None):
+        t_command = {'len_training_data': len(training_data), 'len_validation_data': len(validation_data), 'no_epochs': no_epochs,
+                     'learning_rate': learning_rate, 'batch_size': batch_size, 'tolerance': tolerance,
+                     'log_file_path': log_file_path}
+        self.given_commands.append(t_command)
         for epoch in range(no_epochs):
             print('\nEpoch:', epoch + 1)
             self.train_batch_wise(training_data, learning_rate=learning_rate, batch_size=batch_size)
-            self.evaluate(validation_data, tolerance=tolerance, log_file_path=log_file_path)
+            self.log(validation_data, tolerance=tolerance, log_file_path=log_file_path)
 
     def train_batch_wise(self, training_data: list[(np.array, np.array)], learning_rate=0.01, batch_size=1):
         # mp.set_start_method(method='fork')
@@ -108,7 +116,7 @@ class Network:
                         raise Exception("self.paras[-(layer+1)][param_type].shape {0} != params_gradient[entry]"
                                         "[layer][param_type].shape {1}".
                                         format(self.paras[-(layer + 1)][param_type].shape, params_gradient[entry]
-                                                         [layer][param_type].shape))
+                        [layer][param_type].shape))
                     t_params_gradient += params_gradient[entry][layer][param_type] / batch_size
                 t_params_gradient *= -1 * learning_rate
                 self.paras[-(layer + 1)][param_type] += t_params_gradient
@@ -150,7 +158,7 @@ class Network:
 
         return activations, weighted_inputs
 
-    def evaluate(self, validation_data, tolerance=0.95, log_file_path=None):
+    def log(self, validation_data, tolerance=0.95, log_file_path=None):
         got_correct = 0
         avg_error = 0
 
@@ -163,18 +171,86 @@ class Network:
                 np.less_equal(result, sample[1] + variation).all()) or \
                     np.array_equal(result, sample[1]):
                 got_correct += 1
-            avg_error += np.sum(sample[1] - result)
+            avg_error += np.sum(np.abs(sample[1] - result))
 
         print(got_correct, '/', len(validation_data), 'were correct within a', tolerance, 'tolerance range')
+
+        for sample in validation_data:
+            result = self.feedforward(sample[0])
+            if np.argmax(result) == np.argmax(sample[1]):
+                got_correct += 1
+
+        print(got_correct, '/', len(validation_data), 'were correctly guessed')
 
         avg_error *= 1 / len(validation_data)
         self.avg_error.append(np.sum(avg_error))
 
-        try:
+        existed_before = os.path.exists(log_file_path)
+        if log_file_path:
+            log_file = open(str(log_file_path + ' log.csv'), mode='a')
+            log = csv.writer(log_file, delimiter=';')
+            if not existed_before:
+                log.writerow(['no validation datapoints', 'got correct', '% got correct', 'avg_error', '']
+                             + list(self.given_commands[-1].keys()) if self.given_commands[-1] else [])
+            log.writerow([len(validation_data), got_correct, got_correct / len(validation_data), str(avg_error).replace('.', ','),
+                          ''] + [i[1] for i in self.given_commands[-1].items()])
+            log_file.close()
+
+    def evaluate(self, validation_data, log_file_path=None):
+        got_correct = 0
+        all_results = []
+
+        for sample in validation_data:
+            result = self.feedforward(sample[0])
+            if np.argmax(result) == np.argmax(sample[1]):
+                got_correct += 1
+            all_results.append(result)
+
+        if True:
             if log_file_path:
-                log_file = open(log_file_path + '.csv', mode='a')
-                log = csv.writer(log_file, delimiter=';')
-                log.writerow([got_correct, got_correct / len(validation_data), abs(avg_error)])
+                # create csv.writer
+                log_file = open(log_file_path + '.csv', mode='w')
+                log = csv.writer(log_file, delimiter=';', lineterminator='\n')
+
+                # overall information
+                log.writerow(['structure:', self.structure])
+                log.writerows([])
+                if self.given_commands:
+                    log.writerow(self.given_commands[0].keys())
+                    for command in self.given_commands:
+                        log.writerow(i[1] for i in command.items())
+                log.writerow([])
+                log.writerow(
+                    ['tested on data points', len(validation_data), 'correct results:', got_correct,
+                     '% correct results:', got_correct / len(validation_data)])
+                log.writerow([])
+
+                # results headers
+                log.writerow(['result on data points'])
+                log.writerow(['right answer', '', 0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+                # all data points
+                change = np.zeros(shape=(len(all_results) - 1, len(all_results[0]), 1))
+                for i in range(len(all_results)):
+                    t_row = [np.argmax(validation_data[i][1]), '']
+                    for j in all_results[i]:
+                        t_row.append(str(float(j)).replace('.', ','))
+                    t_row.append('')
+
+                    """# total change in the results
+                    if i == 0:
+                        for j in range(1, len(all_results)):
+                            change[j-1] = np.abs(all_results[j] - all_results[j - 1])
+                        t_row.append('total')
+                        for k in change.T[0]:
+                            t_row.append(str(float(np.sum(k))).replace('.', ','))
+
+                    # average change in the results
+                    if i == 1:
+                        t_row.append('average')
+                        for k in change.T[0]:
+                            t_row.append(str(float(np.sum(k)/len(all_results))).replace('.', ','))"""
+
+                    log.writerow(t_row)
                 log_file.close()
-        except:
-            print('An Problem occured with log file')
+                print('Created evaluation successful')
