@@ -97,7 +97,7 @@ class StandardFunction(FunctionBase):
         :return: δ_l
         """
 
-        # (w_l+1)^T δ_l+1
+        # (w_l+1)^T * δ_l+1
         return_val = np.dot(parameters_of_next_layer[0].transpose(), error_of_next_layer)
         # ⊙ σ′(z_l)
         return_val = np.multiply(return_val, self.prime_activation_function(weighted_inputs_of_current_layer))

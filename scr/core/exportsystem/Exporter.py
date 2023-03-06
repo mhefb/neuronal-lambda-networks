@@ -77,22 +77,41 @@ def __save_paras(paras: list[list[np.ndarray]]):
     return listSecond
 
 
+def __save_commands(given_commands: list[dict]):
+    return_val = {}
+
+    for i in range(len(given_commands)):
+        return_val[str(i)] = given_commands[i]
+
+    return return_val
+
+
+def __load_commands(inp: dict[str]):
+    return_val = []
+
+    for i in range(len(inp)):
+        return_val.append(inp[str(i)])
+
+    return return_val
+
+
 def exportString(net: Network):
     return json.dumps({
         "func": __save_funcs(net.funcs),
         "paras": __save_paras(net.paras),
-        "structure": net.structure
+        "structure": net.structure,
+        "commands": __save_commands(net.given_commands)
     })
 
 
 def importString(jsonNet: str):
     obj = json.loads(jsonNet)
     # print(obj)
-
-    return Network.createFrom(
-        structure=obj["structure"],
+    return Network(
+        obj["structure"],
+        functions=__load_funcs(obj["func"]),
         paras=__load_paras(obj["paras"]),
-        funcs=__load_funcs(obj["func"])
+        given_commands=__load_commands(obj["commands"])
     )
 
 
