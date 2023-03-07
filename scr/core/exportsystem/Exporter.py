@@ -1,8 +1,8 @@
 from core.Network import Network
-from core.custom_Functions import FunctionBase
-from core.custom_Functions.StandardFunctions import StandardFunction
-from core.custom_Functions.SinusoidFunctions import SinusoidFunction
-from core.custom_Functions.Quadratic import QuadraticFunction
+from core.customWeightingFunctions import FunctionBase
+from core.customWeightingFunctions.StandardFunctions import StandardFunction
+from core.customWeightingFunctions.SinusoidFunctions import SinusoidFunction
+from core.customWeightingFunctions.Quadratic import QuadraticFunction
 import numpy as np
 import json
 import base64

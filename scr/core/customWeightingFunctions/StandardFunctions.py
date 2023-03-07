@@ -1,5 +1,5 @@
 import numpy as np
-from core.custom_Functions.FunctionBase import FunctionBase
+from core.customWeightingFunctions.FunctionBase import FunctionBase
 
 
 class StandardFunction(FunctionBase):
