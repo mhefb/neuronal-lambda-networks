@@ -15,14 +15,17 @@ MAP = {
     "quadratic": QuadraticFunction
 }
 
+
 # Better version of is_instance, which only compaires the class-names
 def __bisinstance(obj: object, clazz: type):
     return type(obj).__name__ == clazz.__name__
+
 
 def __load_funcs(name: str):
     for key in MAP:
         if key == name:
             return MAP[key]()
+
 
 def __save_funcs(funcs: FunctionBase):
     for key in MAP:
@@ -30,6 +33,7 @@ def __save_funcs(funcs: FunctionBase):
             return key
 
     raise "Unknown Function found: " + str(funcs)
+
 
 def __load_paras(paras: list[list[str]]):
     listSecond = []

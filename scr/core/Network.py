@@ -11,9 +11,13 @@ class Network:
     paras: list[list[np.ndarray]]
     funcs: FunctionBase
     given_commands: list[dict]
+    last_costs: list[float]
+    accuracy: list[float]
 
     def __init__(self, structure: list[int], functions=StandardFunction(), paras=None, given_commands=None):
         self.funcs = functions
+        self.accuracy = []
+        self.last_costs = []
 
         # Generate structure
         self.structure = structure
@@ -53,6 +57,7 @@ class Network:
             if np.argmax(result) == np.argmax(sample[1]):
                 got_correct += 1
 
+        self.accuracy.append(got_correct/len(data))
         return got_correct
 
     """def evaluate_network(self, data, tolerance=0.70):
